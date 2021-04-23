@@ -24,8 +24,8 @@ class ApiController extends AbstractController
     {
         $entityManager = $this->getDoctrine()->getManager();
         $watch = new Watch();
-        $watch->setToken(bin2hex(Uuid::v4()->toBinary()));
-        $watch->setShareId(bin2hex(Uuid::v4()->toBinary()));
+        $watch->setToken(bin2hex(random_bytes(16)));
+        $watch->setShareId(bin2hex(random_bytes(8)));
         $watch->setShareEnabled(false);
         $entityManager->persist($watch);
         $entityManager->flush();
