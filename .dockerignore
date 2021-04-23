@@ -1,0 +1,10 @@
+.env.*
+.dockerignore
+**/Dockerfile
+docker-compose*
+
+.git/
+vendor/
+
+.idea/
+.idea_modules/
