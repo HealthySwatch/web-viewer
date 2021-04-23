@@ -78,7 +78,7 @@ class Report implements \JsonSerializable
     {
         return [
             "created_at" => $this->createdAt,
-            "payload" => $this->payload
+            "payload" => json_decode($this->payload)
         ];
     }
 }

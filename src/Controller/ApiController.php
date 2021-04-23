@@ -88,23 +88,23 @@ class ApiController extends AbstractController
     }
 
     /**
-     * @Route("/viewer", name="report_create", methods={"POST"})
+     * @Route("/watch/{token}/report", name="watch_report_create", methods={"POST"})
      *
      */
-    public function createReport(Request $request): Response
+    public function createReport(Request $request, string $token): Response
     {
         $entityManager = $this->getDoctrine()->getManager();
         $watchRepository = $this->getDoctrine()->getRepository(Watch::class);
         $body = json_decode($request->getContent());
-        $watch = $watchRepository->findOneBy(['token' => $body->token]);
+        $watch = $watchRepository->findOneBy(['token' => $token]);
         if ($watch) {
             $report = new Report();
             $report->setWatch($watch);
             $report->setCreatedAt(new \DateTime());
-            $report->setPayload($body->payload);
+            $report->setPayload(json_encode($body));
             $entityManager->persist($report);
             $entityManager->flush();
-            return $this->json($report, 200);
+            return $this->json($report, 201);
         }
         return $this->json([
             'message' => "no matching watch for this token",
