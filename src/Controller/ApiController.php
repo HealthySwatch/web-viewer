@@ -8,7 +8,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * @Route("/api/v1", name="api_")
@@ -26,7 +25,7 @@ class ApiController extends AbstractController
         $watch = new Watch();
         $watch->setToken(bin2hex(random_bytes(16)));
         $watch->setShareId(bin2hex(random_bytes(8)));
-        $watch->setShareEnabled(false);
+        $watch->setShareEnabled(true);
         $entityManager->persist($watch);
         $entityManager->flush();
         return $this->json($watch, 201);
