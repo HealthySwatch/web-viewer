@@ -1,26 +1,253 @@
-{% extends 'base.html.twig' %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>HealtySWatch: Loading...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css" integrity="sha256-2H3fkXt6FEmrReK448mDVGKb3WW2ZZw35gI7vqHOE4Y=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/bootstrap-table.min.css" integrity="sha256-rB3RlL9QDb5Gn3+LvTTJoU2ex36mW/YbPDpSWGqrSAE=" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ asset('css/viewer.css') }}">
+</head>
+<body class="bg-light">
+<div id="wrapper" style="display: none">
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            <!-- Start of Topbar -->
+            <nav class="navbar navbar-light bg-white shadow mb-4">
+                <div class="container-fluid">
+                    <a class="navbar-brand"><img src="{{ asset('img/logo.png') }}" width="32px" alt="">HealthySWatch</a>
+                    <span class="navbar-text"><i class="fas fa-history"></i> Dernière actualisation: <span id="update-date">...</span></span>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#periodModal"><i class="fas fa-calendar-alt"></i> Changer la période</button>
+                </div>
+            </nav>
+            <!-- End of Topbar -->
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Fiche Patient: <span id="patientName"></span></h1>
+                </div>
+                <!-- Content Row -->
+                <div class="row">
+                    <!-- Earnings (Monthly) Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Fréquence cardiaque
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800 d-flex justify-content-around">
+                                                <span><span id="stats.heart-rate.max">...</span>% <i class="fas fa-caret-up fa-2x text-gray-300"></i></span>
+                                                <span><span id="stats.heart-rate.min">...</span>% <i class="fas fa-caret-down fa-2x text-gray-300"></i></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-heartbeat fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-{% block title %}Hello ReportController!{% endblock %}
+                    <!-- Earnings (Monthly) Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-danger shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                           Oxygenation sanguine
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800 d-flex justify-content-around">
+                                            <span><span id="stats.blood-oxygen.max">...</span>% <i class="fas fa-caret-up fa-2x text-gray-300"></i></span>
+                                            <span><span id="stats.blood-oxygen.min">...</span>% <i class="fas fa-caret-down fa-2x text-gray-300"></i></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-microscope fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-{% block body %}
-    <style>
-        .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-        .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-    </style>
+                    <!-- Pending Requests Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Alertes importantes
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><span id="stats.nb-alert">...</span></div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    <div class="example-wrapper">
-        <h1>Report list</h1>
+                    <!-- Pending Requests Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Rapports disponibles
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><span id="stats.nb-reports">...</span></div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-file-medical-alt fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Content Row -->
 
-        Here is the list of reports available:
-        <ul id="report-list">
-        </ul>
+                <div class="row">
+                    <!-- Alerts table -->
+                    <div class="col-12">
+                        <div class="card shadow mb-4">
+                            <!-- Card Header -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Dernières alertes</h6>
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                                <table id="events-table"
+                                       class="table-striped"
+                                       data-toggle="table"
+                                       data-pagination="true"
+                                       data-search="false"
+                                       data-locale="fr-FR"
+                                       data-page-size="5"
+                                       data-page-list="[5, 10, 15, 25]"
+                                       data-sort-name="date" data-sort-order="desc">
+                                    <thead>
+                                    <tr>
+                                        <th data-sortable="true" data-field="date" data-formatter="tableDateFormatter">Date</th>
+                                        <th data-field="source">Source</th>
+                                        <th data-field="message">Message</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card shadow mb-4">
+                            <div class="card-body">
+                                <canvas id="heart-rate-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card shadow mb-4">
+                            <div class="card-body">
+                                <canvas id="blood-oxygen-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- End Page Content -->
+        </div>
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto text-black-50">
+                    <span>Copyright &copy; HealthySWatch 2021</span>
+                </div>
+            </div>
+        </footer>
+        <!-- End of Footer -->
     </div>
-{% endblock %}
+</div>
 
-{% block javascripts %}
-    <script> const rawData = [{{ reports|map(r => r.payload)|join(',')|raw }}];</script>
-    <script src="https://cdn.jsdelivr.net/pako/1.0.3/pako.min.js"></script>
-    <script src="{{ asset('js/base58.js') }}"></script>
-    <script src="{{ asset('js/cipher.js') }}"></script>
-    <script src="{{ asset('js/viewer.js') }}"></script>
-{% endblock %}
+<!-- Period Modal -->
+<div class="modal fade" id="periodModal" tabindex="-1" aria-labelledby="periodModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="periodModalLabel">Sélectionner la période</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: row; justify-content: space-evenly;">
+                    <div class="form-group">
+                        <label for="periodStartDateSelect">Date de début</label>
+                        <select class="form-control" id="periodStartDateSelect">
+                            <option>test</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="periodEndDateSelect">Date de fin</label>
+                        <select class="form-control" id="periodEndDateSelect">
+                            <option>test</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary">Appliquer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="passwordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordModalLabel">Mot de passe requis</h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input autocomplete="off" type="password" class="form-control" id="inputPassword" placeholder="Entrez le mot de passe">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="passwordError"></span>
+                <button type="button" class="btn btn-primary" onclick="passwordFromModal()">Accéder</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/bootstrap-table.min.js" integrity="sha256-gMoSNDm+B9Veg00J8iSe1yVjB/trh1AKjavKd4lDfe4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/locale/bootstrap-table-fr-FR.min.js" integrity="sha256-oAaQjMWFBtTBy1TMQDS66wO5Xk773SuTFWDAmVzTE8M=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.4.0/dist/chart.min.js" integrity="sha256-sKuIOg+m9ZQb96MRaiHCMzLniSnMlTv1h1h4T74C8ls=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako.min.js" integrity="sha256-phjpyt4UhC8NSmFnN8Vu5TgCZAaYddul9tiFZuR9WVU=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/fr.js" integrity="sha256-dKE06b/OkvywUKCo7/P/I1YiVoDObmR9NOAZfgnx8Wg=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js" integrity="sha256-sFB24K2xU2EOgWAtb3ySAGjhMqcUvUJGmwjDcTQa04k=" crossorigin="anonymous"></script>
+<script src="{{ asset('js/base58.js') }}"></script>
+<script src="{{ asset('js/cipher.js') }}"></script>
+<script src="{{ asset('js/charts.js') }}"></script>
+<script>
+    const rawData = [{{ reports|map(r => r.payload)|join(',')|raw }}];
+    const rawName = '{{ name|raw }}';
+</script>
+<script src="{{ asset('js/viewer.js') }}"></script>
+</body>
+</html>

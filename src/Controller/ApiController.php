@@ -19,13 +19,21 @@ class ApiController extends AbstractController
      * @Route("/watch", name="watch_create", methods={"POST"})
      *
      */
-    public function createWatch(): Response
+    public function createWatch(Request $request): Response
     {
         $entityManager = $this->getDoctrine()->getManager();
         $watch = new Watch();
         $watch->setToken(bin2hex(random_bytes(16)));
         $watch->setShareId(bin2hex(random_bytes(8)));
-        $watch->setShareEnabled(true);
+        $body = json_decode($request->getContent());
+        if (isset($body->name)) {
+            $watch->setName($body->name);
+        }
+        if (isset($body->share_enabled)) {
+            $watch->setShareEnabled($body->share_enabled);
+        } else {
+            $watch->setShareEnabled(true);
+        }
         $entityManager->persist($watch);
         $entityManager->flush();
         return $this->json($watch, 201);
@@ -74,6 +82,9 @@ class ApiController extends AbstractController
         $body = json_decode($request->getContent());
         $watch = $watchRepository->findOneBy(['token' => $token]);
         if ($watch) {
+            if (isset($body->name)) {
+                $watch->setName($body->name);
+            }
             if (isset($body->share_enabled)) {
                 $watch->setShareEnabled($body->share_enabled);
             }

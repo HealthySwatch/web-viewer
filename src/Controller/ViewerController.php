@@ -20,10 +20,8 @@ class ViewerController extends AbstractController
            "shareEnabled" => true
         ]);
         if ($watch) {
-            return $this->render('viewer/index.html.twig', ['reports' => $watch->getReports()]);
+            return $this->render('viewer/index.html.twig', ['reports' => $watch->getReports(), 'name' => $watch->getName()]);
         }
-        return $this->render('viewer/404.html.twig', [
-            'controller_name' => 'ViewerController',
-        ], new Response('', 404));
+        return $this->render('viewer/404.html.twig', [], new Response('', 404));
     }
 }

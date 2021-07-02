@@ -1,23 +1,145 @@
-let userPassword = 'tOtO'
-
 let key = window.location.hash.substring(1);
 if (key === '') {
     throw 'no encryption key given';
 }
 
+let locale = window.navigator.userLanguage || window.navigator.language;
 let base58 = new baseX('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
+let loadedReports = []
+let loadedName = 'Unknown'
 
-key = arraybufferToString(base58.decode(key)).padStart(32, '\u0000')
-
-rawData.forEach(async it => {
-    try {
-        let value = JSON.parse(await decode(it))
-        let ul = document.getElementById("report-list");
-        let li = document.createElement("li");
-        li.appendChild(document.createTextNode(new Date(value.startAt).toISOString() + ' to ' + new Date(value.endAt).toISOString()));
-        ul.appendChild(li);
-        console.log(value)
-    } catch (err) {
-        console.error(err)
+async function decodeData(key, password) {
+    let encryptionKey = arraybufferToString(base58.decode(key)).padStart(32, '\u0000')
+    let data = []
+    for (const raw of Array.from(rawData)) {
+        data.push(JSON.parse(await decode(raw, encryptionKey, password)))
     }
-})
+    loadedReports = data
+    if (rawName != null && rawName !== '') {
+        loadedName = await decode(JSON.parse(rawName), encryptionKey, password)
+    }
+}
+
+function cleanup() {
+    let elements = ['heart-rate-chart', 'blood-oxygen-chart']
+    for (const element of elements) {
+        document.getElementById(element).innerHTML = ''
+    }
+}
+
+function init(reports) {
+    document.title='HealtySWatch - Patient ' + loadedName
+    document.getElementById('patientName').innerText = loadedName
+    document.getElementById('stats.nb-reports').innerText = reports.length
+    let elements = ['periodStartDateSelect', 'periodEndDateSelect']
+    for (const element of elements) {
+        document.getElementById(element).innerHTML = ''
+    }
+    if (reports.length > 0) {
+        let startSelect = document.getElementById('periodStartDateSelect')
+        let endSelect = document.getElementById('periodEndDateSelect')
+        for (const report of reports) {
+            let option = document.createElement("option")
+            option.appendChild(document.createTextNode(moment(report.startAt * 1000).format('LL')))
+            startSelect.appendChild(option)
+            option = document.createElement("option")
+            option.appendChild(document.createTextNode(moment(report.endAt * 1000).format('LL')))
+            endSelect.appendChild(option)
+        }
+        document.getElementById('update-date').innerText = tableDateFormatter(reports[reports.length-1].endAt * 1000)
+    }
+    document.getElementById("wrapper").style.display = 'block'
+}
+
+function render(reports) {
+    let events = []
+    if (reports.length > 0) {
+        let $eventsTable = $('#events-table')
+        let heartRateDS = []
+        let bloodOxygenDS = []
+        reports.forEach(report => {
+            report.events.forEach(event => {
+                events.push({
+                    date: (report.startAt + event.time) * 1000,
+                    source: event.source,
+                    message: event.message
+                })
+            })
+            report.samples.HeartRateSensor.forEach(sample => {
+                heartRateDS.push({x: (report.startAt + sample.time) * 1000, y: sample.data})
+            })
+            report.samples.BloodOxygenSensor.forEach(sample => {
+                bloodOxygenDS.push({x: (report.startAt + sample.time) * 1000, y: (sample.data * 100)})
+            })
+            report.startAt += 60 * 3;
+        })
+        $eventsTable.bootstrapTable('load', events)
+        if (events.length <= 5) {
+            document.getElementsByClassName('fixed-table-pagination').forEach(element => {
+                element.style.display = 'none'
+            })
+        }
+        createHeartRateChart(document.getElementById('heart-rate-chart'), heartRateDS)
+        createBloodOxygenChart(document.getElementById('blood-oxygen-chart'), bloodOxygenDS)
+    }
+    document.getElementById('stats.nb-alert').innerText = events.length
+}
+
+async function createPageOrPrompt(password) {
+    try {
+        await decodeData(key, password)
+    } catch (err) {
+        let modal = passwordModal();
+        modal.show()
+        if (password !== '') {
+            let errorLabel = document.getElementById("passwordError")
+            errorLabel.style.color = 'red'
+            errorLabel.innerText = "Mot de passe invalide"
+        }
+        return false
+    }
+    cleanup()
+    init(loadedReports)
+    render(loadedReports)
+    return true
+}
+
+function passwordFromModal() {
+    let errorLabel = document.getElementById("passwordError");
+    let newPassword = document.getElementById('inputPassword').value
+    if (newPassword !== '' && newPassword != null) {
+        errorLabel.style.color = 'gray'
+        errorLabel.innerHTML = '<i class="fas fa-cog fa-spin"></i>'
+        createPageOrPrompt(newPassword).then(res => {
+            if (res) {
+                passwordModal().hide()
+            }
+        })
+    }
+}
+
+function passwordModal() {
+    let element = document.getElementById('passwordModal')
+    let modal = bootstrap.Modal.getInstance(element)
+    if (modal == null) {
+        modal = new bootstrap.Modal(element)
+        element.addEventListener('shown.bs.modal', function () {
+            document.getElementById('inputPassword').focus()
+        })
+    }
+    return modal;
+}
+
+function tableDateFormatter(timestamp) {
+    return moment(timestamp).format('LLLL')
+}
+
+document.getElementById('inputPassword').addEventListener("keyup", function(event) {
+    if (event.keyCode === 13) {
+        event.preventDefault();
+        passwordFromModal()
+    }
+});
+
+moment.locale(locale)
+createPageOrPrompt('')

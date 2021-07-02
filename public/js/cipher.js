@@ -3,19 +3,14 @@ function stringToArraybuffer(message)
 {
     const messageArray = new Uint8Array(message.length);
     for (let i = 0; i < message.length; ++i) {
-        messageArray[i] = message.charCodeAt(i);
+        messageArray[i] = message.codePointAt(i);
     }
     return messageArray;
 }
 
 function arraybufferToString(messageArray)
 {
-    const array = new Uint8Array(messageArray);
-    let message = '', i = 0;
-    while(i < array.length) {
-        message += String.fromCharCode(array[i++]);
-    }
-    return message;
+    return new TextDecoder("utf-8").decode(new Uint8Array(messageArray));
 }
 
 async function deriveKey(key, password, spec)
@@ -60,8 +55,8 @@ function decompress(data) {
     return window.pako.inflate(new Uint8Array(data));
 }
 
-async function decode(payload) {
-    const spec = payload.auth;
+async function decode(payload, key, password) {
+    const spec = Array.from(payload.auth);
     const data = payload.data;
 
     const adata = JSON.stringify(spec);
@@ -77,7 +72,7 @@ async function decode(payload) {
             additionalData: stringToArraybuffer(adata), // the addtional data you used during encryption (if any)
             tagLength: spec[4] // the length of the tag you used to encrypt (if any)
         },
-        await deriveKey(key, userPassword, spec),
+        await deriveKey(key, password, spec),
         stringToArraybuffer(
             atob(data)
         )
