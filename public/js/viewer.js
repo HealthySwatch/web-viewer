@@ -8,6 +8,11 @@ let base58 = new baseX('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwx
 let loadedReports = []
 let loadedName = 'Unknown'
 
+let startWindow = 0
+let endWindow = 0
+
+let renderedCharts = []
+
 async function decodeData(key, password) {
     let encryptionKey = arraybufferToString(base58.decode(key)).padStart(32, '\u0000')
     let data = []
@@ -21,10 +26,10 @@ async function decodeData(key, password) {
 }
 
 function cleanup() {
-    let elements = ['heart-rate-chart', 'blood-oxygen-chart']
-    for (const element of elements) {
-        document.getElementById(element).innerHTML = ''
+    for (const chart of renderedCharts) {
+        chart.destroy()
     }
+    renderedCharts = []
 }
 
 function init(reports) {
@@ -38,15 +43,25 @@ function init(reports) {
     if (reports.length > 0) {
         let startSelect = document.getElementById('periodStartDateSelect')
         let endSelect = document.getElementById('periodEndDateSelect')
+
         for (const report of reports) {
             let option = document.createElement("option")
+            option.value = report.startAt
             option.appendChild(document.createTextNode(moment(report.startAt * 1000).format('LL')))
             startSelect.appendChild(option)
             option = document.createElement("option")
+            option.value = report.endAt
             option.appendChild(document.createTextNode(moment(report.endAt * 1000).format('LL')))
             endSelect.appendChild(option)
         }
-        document.getElementById('update-date').innerText = tableDateFormatter(reports[reports.length-1].endAt * 1000)
+
+        startWindow = reports[0].startAt
+        endWindow = reports[reports.length - 1].endAt
+
+        startSelect.selectedIndex = 0
+        endSelect.selectedIndex = reports.length - 1
+
+        document.getElementById('update-date').innerText = tableDateFormatter(endWindow * 1000)
     }
     document.getElementById("wrapper").style.display = 'block'
 }
@@ -57,7 +72,10 @@ function render(reports) {
         let $eventsTable = $('#events-table')
         let heartRateDS = []
         let bloodOxygenDS = []
+        let minHR = -1, maxHR = -1
+        let minBO = -1, maxBO = -1
         reports.forEach(report => {
+            if (report.startAt > endWindow || report.endAt < startWindow) return
             report.events.forEach(event => {
                 events.push({
                     date: (report.startAt + event.time) * 1000,
@@ -67,9 +85,13 @@ function render(reports) {
             })
             report.samples.HeartRateSensor.forEach(sample => {
                 heartRateDS.push({x: (report.startAt + sample.time) * 1000, y: sample.data})
+                if (sample.data > maxHR || maxHR === -1) maxHR = sample.data
+                if (sample.data < minHR || minHR === -1) minHR = sample.data
             })
             report.samples.BloodOxygenSensor.forEach(sample => {
                 bloodOxygenDS.push({x: (report.startAt + sample.time) * 1000, y: (sample.data * 100)})
+                if (sample.data > maxBO || maxBO === -1) maxBO = sample.data
+                if (sample.data < minBO || minBO === -1) minBO = sample.data
             })
             report.startAt += 60 * 3;
         })
@@ -79,8 +101,13 @@ function render(reports) {
                 element.style.display = 'none'
             })
         }
-        createHeartRateChart(document.getElementById('heart-rate-chart'), heartRateDS)
-        createBloodOxygenChart(document.getElementById('blood-oxygen-chart'), bloodOxygenDS)
+        document.getElementById('stats.heart-rate.max').innerText = maxHR
+        document.getElementById('stats.heart-rate.min').innerText = minHR
+        document.getElementById('stats.blood-oxygen.max').innerText = maxBO
+        document.getElementById('stats.blood-oxygen.min').innerText = minBO
+
+        renderedCharts.push(createHeartRateChart(document.getElementById('heart-rate-chart'), heartRateDS))
+        renderedCharts.push(createBloodOxygenChart(document.getElementById('blood-oxygen-chart'), bloodOxygenDS))
     }
     document.getElementById('stats.nb-alert').innerText = events.length
 }
@@ -128,6 +155,16 @@ function passwordModal() {
         })
     }
     return modal;
+}
+
+function updatePeriod() {
+    let element = document.getElementById('periodModal')
+    let modal = bootstrap.Modal.getInstance(element)
+    modal.hide()
+    startWindow = document.getElementById('periodStartDateSelect').value;
+    endWindow = document.getElementById('periodEndDateSelect').value;
+    cleanup()
+    render(loadedReports)
 }
 
 function tableDateFormatter(timestamp) {
